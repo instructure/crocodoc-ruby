@@ -7,7 +7,7 @@ This is a ruby library for interacting with v2 of the [Crocodoc](https://crocodo
 The gem is packaged as the `crocodoc-ruby` gem, so you could install it with
 a gemfile + bundler:
 
-  gem 'crocodoc-ruby', :require => 'crocodoc'
+    gem 'crocodoc-ruby', :require => 'crocodoc'
 
 ## Usage
 
