@@ -6,7 +6,7 @@ This is a ruby library for interacting with v2 of the [Crocodoc](https://crocodo
 
 Add this line to your application's Gemfile:
 
-    gem 'crocodoc-ruby'
+    gem 'crocodoc-ruby',  :require => 'crocodoc',
 
 And then execute:
 
