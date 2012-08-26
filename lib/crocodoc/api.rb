@@ -1,4 +1,25 @@
+require 'active_support/configurable'
+
 module Crocodoc
+  class << self
+    def configure(&block)
+      yield @config ||= Configuration.new
+    end
+
+    def config
+      @config
+    end
+
+    class Configuration
+      include ActiveSupport::Configurable
+      config_accessor :token
+
+      def param_name
+        config.param_name.respond_to?(:call) ? config.param_name.call : config.param_name
+      end
+    end
+  end
+
   # Public: A small ruby client that wraps the Crocodoc api.
   #
   # Examples
@@ -19,9 +40,7 @@ module Crocodoc
     # Examples
     #   crocodoc = Crocodoc::API.new(:token => <token>)
     #   # => <Crocodoc::API:<id>>
-    def initialize(opts)
-      self.token = opts[:token]
-
+    def initialize
       # setup the http object for ssl
       @url = URI.parse(BASE_URL)
       @http = Net::HTTP.new(@url.host, @url.port)
@@ -170,21 +189,62 @@ module Crocodoc
       "https://crocodoc.com/view/#{session_id}"
     end
 
-    # -- Downloads (TODO) --
-
-    # GET https://crocodoc.com/api/v2/download/document
-    def download(doc)
-      raise Crocodoc::Error, "Not implemented"
+    # Public: Get the url to download the document
+    #
+    #   GET https://crocodoc.com/api/v2/download/document
+    #
+    # uuid - The uuid of the document for the session
+    # opts - Options for the session (default: {}):
+    #        :pdf         - Download PDF version instead of original document type. (default: false)
+    #        :filename    - Document filename to use in the Content-Disposition header. (default: doc.<filetype>)
+    #        :annotated   - Include annotations. If true, downloaded document will be a PDF. (default: false)
+    #        :filter      - Limit which users' annotations included. Possible values are: all, none,
+    #                       or a comma-separated list of user IDs as supplied in the user field when
+    #                       creating sessions. See the filter parameter of session creation for example values.
+    #                       (default: all)
+    #
+    # Examples
+    #
+    #   download("6faad04f-5409-4173-87aa-97c1fd1f35ad", {:filename => 'Assignment-One.pdf', :annotated => true})
+    #
+    # Returns a url string for viewing the thumbnail
+    def download(uuid, opts = {})
+      BASE_URL + "/download/document?#{opts.merge({ :token => Crocodoc.config.token, :uuid => uuid }).map { |k,v| "#{k}=#{URI::escape(v.to_s)}" }.join("&")}"
     end
 
-    # GET https://crocodoc.com/api/v2/download/thumbnail
-    def thumbnail(doc)
-      raise Crocodoc::Error, "Not implemented"
+    # Public: Get the url for the document's thumbnail
+    #
+    #   GET https://crocodoc.com/api/v2/download/thumbnail
+    #
+    # uuid - The uuid of the document for the session
+    # opts - Options for the session (default: {}):
+    #        :size          - Maximum dimensions of the thumbnail in the format
+    #                         {width}x{height}. Largest dimensions allowed are
+    #                         300x30 (default: 100x100)
+    #
+    # Examples
+    #
+    #   thumbnail("6faad04f-5409-4173-87aa-97c1fd1f35ad", {:size => '250x250'})
+    #
+    # Returns a url string for viewing the thumbnail
+    def thumbnail(uuid, opts = {})
+      BASE_URL + "/download/thumbnail?#{opts.merge({ :token => Crocodoc.config.token, :uuid => uuid }).map { |k,v| "#{k}=#{URI::escape(v.to_s)}" }.join("&")}"
     end
-    
-    # GET https://crocodoc.com/api/v2/download/text
-    def text(doc)
-      raise Crocodoc::Error, "Not implemented"
+
+    # Public: Get the text contained within a document
+    #
+    #   GET https://crocodoc.com/api/v2/download/text
+    #
+    # uuid - The uuid of the document for the session
+    #
+    # Examples
+    #
+    #   text("6faad04f-5409-4173-87aa-97c1fd1f35ad")
+    #
+    # Returns the document text, encoded using UTF-8. The text for each page is separated by the form feed character (U+000C).
+    # This method is available only if your account has text extraction enabled. Please contact Crocdoc Support for details.
+    def text(uuid)
+      api_call(:get, "download/text", { :uuid => uuid })
     end
 
     # -- API Glue --
@@ -210,7 +270,7 @@ module Crocodoc
     # Returns the json parsed response body of the call
     def api_call(method, endpoint, params={})
       # add api token to params
-      params.merge!({ :token => self.token })
+      params.merge!({ :token => Crocodoc.config.token })
 
       # dispatch to the right method, with the full path (/api/v2 + endpoint)
       request = self.send("format_#{method}", "#{@url.path}/#{endpoint}", params)

@@ -1,13 +1,13 @@
 Gem::Specification.new do |s|
   s.name = %q{crocodoc-ruby}
-  s.version = "0.0.1"
+  s.version = "0.0.2"
 
   s.add_dependency 'json'
 
   s.add_development_dependency 'rspec'
-  s.add_development_dependency 'ruby-deug'
+  s.add_development_dependency 'ruby-debug'
 
-  s.authors = ["Instructure"]
+  s.authors = ["Instructure", "Lexim"]
   s.date = %q{2012-08-07}
   s.extra_rdoc_files = %W(LICENSE)
   s.files = %W(
@@ -16,6 +16,10 @@ Gem::Specification.new do |s|
           lib/crocodoc.rb
           lib/crocodoc/api.rb
           lib/crocodoc/fake_server.rb
+          lib/generators/crocodoc/templates/initializer.rb
+          lib/generators/crocodoc/templates/crocodoc.yml
+          lib/generators/crocodoc/install_generator.rb
+          lib/generators/crocodoc.rb
           crocodoc-ruby.gemspec
   )
   s.homepage = %q{http://github.com/instructure/crocodoc-ruby}
