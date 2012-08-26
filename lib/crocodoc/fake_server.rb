@@ -113,6 +113,10 @@ module Crocodoc
       Crocodoc::FakeResponse.new("200", "true")
     end
 
+    def download_text(verb, params)
+      Crocodoc::FakeResponse.new("200", "The quick brown fox jumps over the lazy dog.")
+    end
+
     def session_create(verb, params)
       # Failure cases
       unless verb == "POST"

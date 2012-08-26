@@ -1,0 +1,8 @@
+development:
+  token: '<%= options[:api_token] %>'
+
+test:
+  token: '<%= options[:api_token] %>'
+
+production:
+  token: '<%= options[:api_token] %>'

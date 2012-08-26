@@ -2,9 +2,12 @@ require 'spec_helper'
 
 describe Crocodoc do
   before do
-    opts = { :token => "testblah1234" }
-    @crocodoc = Crocodoc::API.new(opts)
-    @crocodoc.http = Crocodoc::FakeServer.new(opts)
+    Crocodoc.configure do |config|
+      config.token = 'testblah1234'
+    end
+
+    @crocodoc = Crocodoc::API.new
+    @crocodoc.http = Crocodoc::FakeServer.new({:token => Crocodoc.config.token})
   end
 
   describe "#upload" do
@@ -61,6 +64,39 @@ describe Crocodoc do
       uuid = @crocodoc.upload("http://www.example.com/text.doc")['uuid']
       @crocodoc.delete(uuid)
       lambda { @crocodoc.delete(uuid) }.should raise_error
+    end
+  end
+
+  describe "#download" do
+    it "should provide the download url for a doc" do
+      uuid = "8e5b0721-26c4-11df-b354-002170de47d3"
+
+      url = @crocodoc.download(uuid)
+
+      url.should eq('https://crocodoc.com/api/v2/download/document?token=testblah1234&uuid=8e5b0721-26c4-11df-b354-002170de47d3')
+    end
+  end
+
+  describe "#thumbnail" do
+    it "should provide url without optional size" do
+      uuid = "8e5b0721-26c4-11df-b354-002170de47d3"
+      url = @crocodoc.thumbnail(uuid)
+      url.should eq('https://crocodoc.com/api/v2/download/thumbnail?token=testblah1234&uuid=8e5b0721-26c4-11df-b354-002170de47d3')
+    end
+
+    it "should provide url with optional size provided" do
+      uuid = "8e5b0721-26c4-11df-b354-002170de47d3"
+      url = @crocodoc.thumbnail(uuid, {:size => '300x250'})
+      url.should eq('https://crocodoc.com/api/v2/download/thumbnail?size=300x250&token=testblah1234&uuid=8e5b0721-26c4-11df-b354-002170de47d3')
+    end
+  end
+
+  describe "#text" do
+    it "should provide document's text" do
+      uuid = "8e5b0721-26c4-11df-b354-002170de47d3"
+      text = @crocodoc.text(uuid)
+
+      text.should eq("The quick brown fox jumps over the lazy dog.")
     end
   end
 
