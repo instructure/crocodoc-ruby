@@ -188,19 +188,27 @@ module Crocodoc
     #
     # Returns the downloaded file (as a Tempfile)
     def download(uuid, opts={})
-      opts.merge!({ :uuid=>uuid, :token => self.token })
-      request = self.send("format_get", "#{@url.path}/download/document", opts)
-      Tempfile.open(uuid) do |file|
-        @http.request(request) do |response|
-          response.read_body {|chunk| file.write chunk }
-        end
-        file
-      end
+      opts.merge!({ :uuid=>uuid })
+      download_file('get', 'download/document', opts)
     end
 
-    # GET https://crocodoc.com/api/v2/download/thumbnail
-    def thumbnail(doc)
-      raise Crocodoc::Error, "Not implemented"
+    ## Public: Download the document thumbnail
+    #
+    #   GET https://crocodoc.com/api/v2/download/thumbnail
+    #
+    # uuid - uuid of the document to download
+    #
+    # Optional parameters:
+    #
+    #   size - Maximum dimensions of the thumbnail in the format {width}x{height}. Largest dimensions allowed are 300x300. Default: 100x100
+    #
+    # Examples
+    #   thumbnail(uuid, {:size=>'200x200'})
+    #
+    # Returns the downloaded file (as a Tempfile)
+    def thumbnail(uuid, opts={})
+      opts.merge!({ :uuid=>uuid })
+      download_file('get', 'download/thumbnail', opts)
     end
     
     # GET https://crocodoc.com/api/v2/download/text
@@ -209,6 +217,23 @@ module Crocodoc
     end
 
     # -- API Glue --
+
+    # Internal: make api_call, stream the response.body to a Tempfile
+    #
+    # see api_call for parameters
+    #
+    # Returns the Tempfile
+    def download_file(method, endpoint, params={})
+      params.merge!({ :token => self.token })
+      request = self.send("format_#{method}", "#{@url.path}/#{endpoint}", params)
+      file = Tempfile.new("crocodoc-download-#{params[:uuid]}")
+      # use streaming to keep memory usage sane
+      @http.request(request) do |response|
+        response.read_body {|chunk| file.write chunk }
+      end
+      file.close
+      file
+    end
 
     # Internal: Setup the api call, format the parameters, send the request,
     # parse the response and return it.
