@@ -170,11 +170,32 @@ module Crocodoc
       "https://crocodoc.com/view/#{session_id}"
     end
 
-    # -- Downloads (TODO) --
-
-    # GET https://crocodoc.com/api/v2/download/document
-    def download(doc)
-      raise Crocodoc::Error, "Not implemented"
+    # Public: Download a copy of the file
+    #
+    #   GET https://crocodoc.com/api/v2/download/document
+    #
+    # uuid - uuid of the document to download
+    #
+    # Optional parameters:
+    #
+    #   pdf - Download PDF version instead of original document type. Default: false
+    #   filename - Document filename to use in the Content-Disposition header. Default: doc.<filetype>
+    #   annotated - Include annotations. If true, downloaded document will be a PDF. Default: false
+    #   filter - Limit which users' annotations included. Possible values are: all, none, or a comma-separated list of user IDs as supplied in the user field when creating sessions. See the filter parameter of session creation for example values. Default: all
+    #
+    # Examples
+    #   download(uuid, {:pdf=>true, :filename=>'woof.doc', :annotated=>true, :filter=>'all'})
+    #
+    # Returns the downloaded file (as a Tempfile)
+    def download(uuid, opts={})
+      opts.merge!({ :uuid=>uuid, :token => self.token })
+      request = self.send("format_get", "#{@url.path}/download/document", opts)
+      Tempfile.open(uuid) do |file|
+        @http.request(request) do |response|
+          response.read_body {|chunk| file.write chunk }
+        end
+        file
+      end
     end
 
     # GET https://crocodoc.com/api/v2/download/thumbnail
